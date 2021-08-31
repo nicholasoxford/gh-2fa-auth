@@ -1,0 +1,54 @@
+#!/bin/bash
+set -e
+
+echo "Hello gh-2fa-auth!"
+
+help() {
+    cat <<EOF
+Onboarding New Dev's Github Account:
+ -e / --email = Github account username
+EOF
+}
+email=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+    -h | --help)
+        help
+        exit 0
+        ;;
+    -e | --email)
+        email="$1"
+        shift
+        ;;
+    esac
+    shift
+done
+
+if [ -z "$email" ]; then
+    echo "Please provide your GitHub email address."
+fi
+
+ssh-keygen -t ed25519 -C email -N "" -f ~/.ssh/ssh_key
+
+FILE=~/.ssh/config
+if [ -f "$FILE" ]; then
+    echo "Host *
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/ssh_key" >>FILE
+else
+    touch FILE
+    echo "Host *
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/ssh_key" >>FILE
+fi
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install node
+brew install gh
+ssh-add -K ~/.ssh/ssh_key
+gh auth login -w
+gh ssh-key add ~/.ssh/ssh_key
+gh repo clone pelotoncycle/music-common-data
+gh repo clone pelotoncycle/music-admin
+gh repo clone pelotoncycle/music-api
